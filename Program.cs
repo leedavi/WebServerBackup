@@ -30,8 +30,8 @@ namespace WebServerBackUp
             }
             catch (Exception ex)
             {
-                ResultFile(ex.ToString());
                 Console.WriteLine(ex.ToString());
+                ResultFile(ex.ToString());
             }
         }
 
@@ -176,7 +176,14 @@ namespace WebServerBackUp
                     foreach (var webfolder in websitelist)
                     {
                         Console.WriteLine(webfolder);
-                        ZipFile.CreateFromDirectory(webfolder, webZipFolder + "\\" + webfolder.Split('\\').Last() + lp + ".zip");
+
+                        var parentfolder = "";
+                        var zipfolders = webfolder.Split('\\');
+                        if (zipfolders.Count() > 2) parentfolder = zipfolders[zipfolders.Count() - 2] + "_";
+                        var zipfilename = webZipFolder  + "\\" + parentfolder + webfolder.Split('\\').Last() + lp + ".zip";
+                        ZipArchive zip = ZipFile.Open(zipfilename, ZipArchiveMode.Create);
+                        zip = ZipFilesInDirRecusive(webfolder, "", zip);
+                        zip.Dispose();
                         lp += 1;
                     }
 
@@ -184,6 +191,35 @@ namespace WebServerBackUp
             }
 
         }
+
+        private static ZipArchive ZipFilesInDirRecusive(String searchFolderPath,String ZipFolderPath, ZipArchive zip)
+        {
+            var filelist = Directory.GetFiles(searchFolderPath, "*.*");
+            if (filelist.Any())
+            {
+                foreach (var f in filelist)
+                {
+                    try
+                    {
+                        zip.CreateEntryFromFile(f, ZipFolderPath + Path.GetFileName(f), CompressionLevel.Optimal);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
+                }
+            }
+
+            var dirlist = Directory.GetDirectories(searchFolderPath);
+            foreach (var d in dirlist)
+            {
+                if (ZipFolderPath != "") ZipFolderPath = ZipFolderPath + "\\";
+                zip = ZipFilesInDirRecusive(d, ZipFolderPath + d.Split('\\').Last() + "\\", zip);
+            }
+
+            return zip;
+        }
+
 
         private static List<String> GetListOfWebsite(String searchFolderPath, List<String> websitelist)
         {
@@ -247,9 +283,6 @@ namespace WebServerBackUp
                     }
                 }
 
-                var websiteBackup = GetSetting("WebsiteBackup");
-                if (websiteBackup.ToLower() == "true")
-                {
                     var retensionminutes = GetSetting("retensionminutes");
                     var filelist = Directory.GetFiles(webZipFolder, "*.zip");
                     if (filelist.Any())
@@ -272,35 +305,32 @@ namespace WebServerBackUp
 
                         // purge snapshots
                         var bloblist = container.ListBlobs(null, true, BlobListingDetails.Snapshots);
-                        foreach (IListBlobItem item in bloblist)
+                    foreach (IListBlobItem item in bloblist)
+                    {
+                        //you must cast this as a CloudBlockBlob 
+                        //  because blobItem does not expose all of the properties
+                        CloudBlockBlob theBlob = item as CloudBlockBlob;
+
+                        //Call FetchAttributes so it retrieves the metadata.
+                        theBlob.FetchAttributes();
+
+                        if (theBlob.IsSnapshot)
                         {
-                            //you must cast this as a CloudBlockBlob 
-                            //  because blobItem does not expose all of the properties
-                            CloudBlockBlob theBlob = item as CloudBlockBlob;
-
-                            //Call FetchAttributes so it retrieves the metadata.
-                            theBlob.FetchAttributes();
-
-                            if (theBlob.IsSnapshot)
+                            if (theBlob.SnapshotTime.Value.AddMinutes(Convert.ToInt32(retensionminutes)) < DateTime.UtcNow)
                             {
-                                if (theBlob.SnapshotTime.Value.AddMinutes(Convert.ToInt32(retensionminutes)) < DateTime.UtcNow)
+                                if (theBlob.SnapshotTime.Value.Day == 1)
                                 {
-                                    if (theBlob.SnapshotTime.Value.Day == 1)
-                                    {
-                                        if (theBlob.SnapshotTime.Value.AddDays(32) < DateTime.UtcNow)
-                                        {
-                                            theBlob.Delete();
-                                        }
-                                    }
-                                    else
+                                    if (theBlob.SnapshotTime.Value.AddDays(32) < DateTime.UtcNow)
                                     {
                                         theBlob.Delete();
                                     }
-
+                                }
+                                else
+                                {
+                                    theBlob.Delete();
                                 }
 
                             }
-
 
                         }
                     }
