@@ -32,6 +32,14 @@ The retension time of snapshots made on the 1st of the month is set to 32 days.
 #ResultFile();
 Sends a results file to the azure container, indicating if the backup was successful, this can be checked to ensure the backup has worked.
 
+Setup
+-----
+
+Run the "WebServerBackup.msi" install fie on the server.  This will load all required files into the "C:\Program Files (x86)\WebServerBackup" folder.
+
+Edit the "WebServerBackUp.exe.config" file in that folder to activate the options and to set the correct settings.
+By default all options are set to "false", to actiavte an option set the relative setting in the config file to "true".
+
 Help Links
 ----------
 

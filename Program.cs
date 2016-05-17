@@ -205,7 +205,9 @@ namespace WebServerBackUp
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.ToString());
+                        // Ignore file in error, files may be locked.
+                        // there is always the Search write.lock file which throws a lock error.
+                        Console.WriteLine("ERROR: " + f);
                     }
                 }
             }
@@ -213,7 +215,6 @@ namespace WebServerBackUp
             var dirlist = Directory.GetDirectories(searchFolderPath);
             foreach (var d in dirlist)
             {
-                if (ZipFolderPath != "") ZipFolderPath = ZipFolderPath + "\\";
                 zip = ZipFilesInDirRecusive(d, ZipFolderPath + d.Split('\\').Last() + "\\", zip);
             }
 
