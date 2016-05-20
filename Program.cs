@@ -17,21 +17,25 @@ namespace WebServerBackUp
 {
     class Program
     {
+        private static String _resultmsg = "";
+
         static void Main(string[] args)
         {
             try
             {
+                _resultmsg = "";
                 BackupDB();
                 BackupWebSites();
                 IISSettings();
                 IISlogFiles();
                 CopyToAzure();
-                ResultFile("OK");
+                if (_resultmsg == "") _resultmsg = "OK," + DateTime.UtcNow.ToString();
+                ResultFile(_resultmsg);
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
-                ResultFile(ex.ToString());
+                ResultFile("ERROR," + ex.ToString());
             }
         }
 
@@ -180,11 +184,19 @@ namespace WebServerBackUp
                         var parentfolder = "";
                         var zipfolders = webfolder.Split('\\');
                         if (zipfolders.Count() > 2) parentfolder = zipfolders[zipfolders.Count() - 2] + "_";
-                        var zipfilename = webZipFolder  + "\\" + parentfolder + webfolder.Split('\\').Last() + lp + ".zip";
-                        ZipArchive zip = ZipFile.Open(zipfilename, ZipArchiveMode.Create);
-                        zip = ZipFilesInDirRecusive(webfolder, "", zip);
-                        zip.Dispose();
-                        lp += 1;
+                        var zipfilename = webZipFolder  + "\\" + parentfolder + webfolder.Split('\\').Last() + ".zip";
+
+                        if (File.Exists(zipfilename))
+                        {
+                            _resultmsg += "WARNING, Website zip file '" + parentfolder + webfolder.Split('\\').Last() + ".zip' already exists.  2 or more web installations have the same 'install folder' and 'parent folder' names, you need to rename the parent or install folder.";
+                        }
+                        else
+                        {
+                            ZipArchive zip = ZipFile.Open(zipfilename, ZipArchiveMode.Create);
+                            zip = ZipFilesInDirRecusive(webfolder, "", zip);
+                            zip.Dispose();
+                            lp += 1;
+                        }
                     }
 
                 }
@@ -208,6 +220,10 @@ namespace WebServerBackUp
                         // Ignore file in error, files may be locked.
                         // there is always the Search write.lock file which throws a lock error.
                         Console.WriteLine("ERROR: " + f);
+                        if (!ex.ToString().Contains("write.lock"))
+                        {
+                            _resultmsg += "WARNING, Unknown zip error: " + ex.ToString();
+                        }
                     }
                 }
             }
@@ -224,12 +240,13 @@ namespace WebServerBackUp
 
         private static List<String> GetListOfWebsite(String searchFolderPath, List<String> websitelist)
         {
-            var filelist = Directory.GetFiles(searchFolderPath, "*.aspx");
+            var filematchname = GetSetting("filematchname");
+            var filelist = Directory.GetFiles(searchFolderPath, "*" + Path.GetExtension(filematchname));
             if (filelist.Any())
             {
                 foreach (var f in filelist)
                 {
-                    if (f.EndsWith("Default.aspx"))
+                    if (f.ToLower().EndsWith(filematchname.ToLower()))
                     {
                         websitelist.Add(searchFolderPath);
                         return websitelist;
