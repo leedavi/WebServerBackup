@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Webserverbackup by leedavi</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Webserverbackup</h1>
+        <p class="header">Auto Backup DNN Website files, data and copy to Azure Storage</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/leedavi/WebServerBackup/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/leedavi/WebServerBackup/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/leedavi/WebServerBackup">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/leedavi">leedavi</a></p>
+
+
+      </header>
+      <section>
+        <h1>
+<a id="webserverbackup" class="anchor" href="#webserverbackup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>WebServerBackup</h1>
+
+<p>Auto Backup DNN Website files, data and copy to Azure Storage</p>
+
+<h2>
+<a id="what-is-webserverbackup" class="anchor" href="#what-is-webserverbackup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What is WebServerBackUp</h2>
+
+<p>WebServerBackUp is a console application designed to run from the windows task manager or manually activated.
+It is designed to backup all the files required by DNN Websites on the server and make a versioned (snapshot) history of these files on Azure Storage.</p>
+
+<h2>
+<a id="functions" class="anchor" href="#functions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Functions</h2>
+
+<h3>
+<a id="backupdb" class="anchor" href="#backupdb" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>BackupDB();</h3>
+
+<p>Creates a backup of ALL user databases in a SQL server instance. And then zips these into a single zip file. </p>
+
+<h3>
+<a id="backupwebsites" class="anchor" href="#backupwebsites" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>BackupWebSites();</h3>
+
+<p>Searches for any subfolder from the root folder provided, that contains a "Default.aspx" file.
+All sub-folders containing a "Default.aspx" will be zipped into individual sub-folder named zip files.</p>
+
+<h3>
+<a id="iissettings" class="anchor" href="#iissettings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>IISSettings();</h3>
+
+<p>Makes a copy of all IIS settings and zips them</p>
+
+<h3>
+<a id="iislogfiles" class="anchor" href="#iislogfiles" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>IISlogFiles();</h3>
+
+<p>Clears all IIS Logs files older than the date given.</p>
+
+<h3>
+<a id="copytoazure" class="anchor" href="#copytoazure" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>CopyToAzure();</h3>
+
+<p>Copies all the backup files to Azure and makes a snapshot.<br>
+Any snapshots older than the given retension time will be deleted.
+The retension time of snapshots made on the 1st of the month is set to 32 days.</p>
+
+<h3>
+<a id="resultfile" class="anchor" href="#resultfile" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>ResultFile();</h3>
+
+<p>Sends a results file to the azure container, indicating if the backup was successful, this can be checked to ensure the backup has worked.</p>
+
+<h2>
+<a id="setup" class="anchor" href="#setup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setup</h2>
+
+<p>Run the "WebServerBackup.msi" install fie on the server.  This will load all required files into the "C:\Program Files (x86)\WebServerBackup" folder.</p>
+
+<p>Edit the "WebServerBackUp.exe.config" file in that folder to activate the options and to set the correct settings.
+By default all options are set to "false", to actiavte an option set the relative setting in the config file to "true".</p>
+
+<h2>
+<a id="helpful-links" class="anchor" href="#helpful-links" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Helpful Links</h2>
+
+<p><a href="https://azure.microsoft.com/en-us/documentation/articles/storage-dotnet-how-to-use-blobs">https://azure.microsoft.com/en-us/documentation/articles/storage-dotnet-how-to-use-blobs</a></p>
+
+<p>** Explorer to deal with snapshot downloads and management.
+<a href="http://www.red-gate.com/products/azure-development/azure-explorer/">http://www.red-gate.com/products/azure-development/azure-explorer/</a></p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
