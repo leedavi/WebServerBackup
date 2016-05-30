@@ -31,6 +31,7 @@ namespace WebServerBackUp
                 CopyToAzure();
                 if (_resultmsg == "") _resultmsg = "OK," + DateTime.UtcNow.ToString();
                 ResultFile(_resultmsg);
+                CheckBackup();
             }
             catch (Exception ex)
             {
@@ -237,7 +238,6 @@ namespace WebServerBackUp
             return zip;
         }
 
-
         private static List<String> GetListOfWebsite(String searchFolderPath, List<String> websitelist)
         {
             var filematchname = GetSetting("filematchname");
@@ -357,7 +357,6 @@ namespace WebServerBackUp
             }
         }
 
-
         private static void ResultFile(String resultmsg)
         {
             var webZipFolder = GetSetting("WebZipFolder");
@@ -400,8 +399,124 @@ namespace WebServerBackUp
             }
         }
 
+        private static void CheckBackup()
+        {
+            var checkresultfile = GetSetting("checkresultfile");
+            if (checkresultfile.ToLower() == "true")
+            {
+                var smtp = GetSetting("smtp");
+                var smtpuser = GetSetting("smtpuser");
+                var smtppassword = GetSetting("smtppassword");
+                var email = GetSetting("email");
+                var checkcontainer = GetSetting("checkcontainer");
+                var resultfilehours = GetSetting("resultfilehours");
+
+                var isOK = true;
+                var emailMsg = "";
+
+                var storageConnectionString = GetSetting("StorageConnectionString");
+                var storageContainer = GetSetting("StorageContainer");
+
+                // Retrieve storage account from connection string.
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(storageConnectionString);
+
+                // Create the blob client.
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+                IEnumerable<CloudBlobContainer> containers = blobClient.ListContainers();
+
+                foreach (CloudBlobContainer item in containers)
+                {
+                    // read result file
+                    try
+                    {
+                        var resultBlob = item.GetBlobReference("resultfile.txt");
+
+                        var source = resultBlob.OpenRead();
+                        var resultdata = "ERROR, Invalid resultfile data";
+                        if (resultBlob.Properties.Length < 32000) // resultfile should always be less than this.
+                        {
+                            byte[] buffer = new byte[resultBlob.Properties.Length];
+                            source.Read(buffer, 0, Convert.ToInt32(resultBlob.Properties.Length));
+
+                            resultdata = Encoding.UTF8.GetString(buffer);
+                        }
+
+                        var resultarray = resultdata.Split(',');
+                        if (resultarray.Length >= 1)
+                        {
+                            if (resultarray[0] != "OK")
+                            {
+                                isOK = false;
+                                emailMsg += item.Name + ": " + resultdata + Environment.NewLine;
+                            }
+                            else
+                            {
+                                //Status OK, check date
+                                try
+                                {
+                                    if (resultBlob.Properties.LastModified.Value < DateTime.Now.AddHours(Convert.ToInt32(resultfilehours) * -1))
+                                    {
+                                        isOK = false;
+                                        emailMsg += item.Name + ": backup out of date, " + resultBlob.Properties.LastModified.Value.ToString() + ". Expected minimum date: " + DateTime.Now.AddHours(Convert.ToInt32(resultfilehours) * -1) + Environment.NewLine;
+                                    }
+                                    else
+                                    {
+                                        emailMsg += item.Name + ": " + resultdata + Environment.NewLine;
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    emailMsg += item.Name + ": " + e.ToString() + Environment.NewLine;
+                                    isOK = false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            isOK = false;
+                            emailMsg += item.Name + ": ERROR - Invalid Result File." + Environment.NewLine;
+                        }
 
 
+                    }
+                    catch (Exception e)
+                    {
+                        isOK = false;
+                        emailMsg += item.Name + ": " + e.ToString() + Environment.NewLine;
+                        Console.WriteLine(e.Message);
+                    }
+                }
+
+                Console.WriteLine(emailMsg);
+
+                try
+                {
+                    MailMessage mail = new MailMessage();
+                    SmtpClient SmtpServer = new SmtpClient(smtp);
+
+                    mail.From = new MailAddress(email);
+                    mail.To.Add(email);
+                    if (isOK)
+                        mail.Subject = "WebServerBackup: OK";
+                    else
+                        mail.Subject = "WebServerBackup: FAILED";
+                    mail.Body = emailMsg;
+
+                    SmtpServer.Port = 25;
+                    SmtpServer.Credentials = new System.Net.NetworkCredential(smtpuser, smtppassword);
+                    SmtpServer.EnableSsl = false;
+
+                    SmtpServer.Send(mail);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Email Error : " + e.ToString() + Environment.NewLine);                    
+                }
+
+            }
+        }
+        
         /// <span class="code-SummaryComment"><summary></span>
         /// Executes a shell command synchronously.
         /// <span class="code-SummaryComment"></summary></span>
