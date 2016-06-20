@@ -40,6 +40,17 @@ It is designed to backup all the files required by DNN Websites on the server an
 By default all options are set to "false", to actiavte an option set the relative setting in the config file to "true".</p>
 
 <h2>
+<a id="setuptask" class="anchor" href="#setuptask" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Setup Task</h2>
+
+<p>After the WebServerBackup is installed you can setup a windows task from task Manger to run the backup/check each night.</p>
+<p>
+Don't forget to make sure that the task is ran even if the user is not logged in.
+</p>
+    <div>
+        <img src="/images/TaskSetup.PNG" alt="Task Manager" />
+    </div>
+
+<h2>
 <a id="functions" class="anchor" href="#functions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Functions</h2>
 
 <h3>
@@ -52,6 +63,8 @@ By default all options are set to "false", to actiavte an option set the relativ
 
 <p>Searches for any subfolder from the root folder provided, that contains a "Default.aspx" file.
 All sub-folders containing a "Default.aspx" will be zipped into individual sub-folder named zip files.</p>
+        <p>
+        NOTE: A known issue is that any zip file of 4GB will be corrupt.  We're working of a solution to split the zip file to stop this happening.</p>
 
 <h3>
 <a id="iissettings" class="anchor" href="#iissettings" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>IISSettings();</h3>
@@ -75,6 +88,11 @@ The retension time of snapshots made on the 1st of the month is set to 32 days.<
 
 <p>Sends a results file to the azure container, indicating if the backup was successful, this can be checked to ensure the backup has worked.</p>
 
+<h3>
+<a id="CheckBackup" class="anchor" href="#CheckBackup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>CheckBackup();</h3>
+
+<p>Checks the result file created by hte backup and sends an email to notify of success or failure.  This process will search all containers for a result file and send a single email with a summary of results.</p>
+<p>This function can be ran from an independant server and will check all containers in the storage container specified in the settings.  Therefore you only need run this once for all servers that have been backed up.</p>
 <h2>
 <a id="helpful-links" class="anchor" href="#helpful-links" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Helpful Links</h2>
 
