@@ -12,6 +12,12 @@ using Microsoft.SqlServer.Management.Smo;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Auth;
+using net.openstack.Core.Domain;
+using net.openstack.Core.Providers;
+using net.openstack.Providers.Rackspace;
+using OpenStack.Compute.v2_1;
+using OpenStack.Synchronous;
+using Server = Microsoft.SqlServer.Management.Smo.Server;
 
 namespace WebServerBackUp
 {
@@ -24,14 +30,15 @@ namespace WebServerBackUp
             try
             {
                 _resultmsg = "";
-                BackupDB();
-                BackupWebSites();
-                IISSettings();
-                IISlogFiles();
-                CopyToAzure();
+                //BackupDB();
+                //BackupWebSites();
+                //IISSettings();
+                //IISlogFiles();
+                //CopyToAzure();
+                CopyToOvh();
                 if (_resultmsg == "") _resultmsg = "OK," + DateTime.UtcNow.ToString();
                 ResultFile(_resultmsg);
-                CheckBackup();
+                //CheckBackup();
             }
             catch (Exception ex)
             {
@@ -262,6 +269,34 @@ namespace WebServerBackUp
 
             return websitelist;
         }
+
+        private static void CopyToOvh()
+        {
+            var copytoazure = GetSetting("copytoovh");
+            if (copytoazure.ToLower() == "true")
+            {
+                Console.WriteLine("Copy to OVH");
+
+                var storageConnectionString = GetSetting("StorageConnectionString");
+                var storageContainer = GetSetting("StorageContainer");
+
+                var identityEndpoint = new Uri("https://auth.cloud.ovh.net/v2.0");
+                var identity = new CloudIdentityWithProject
+                {
+                    Username = "jav54Jubs3d7",
+                    Password = "BAjEK2vjQFE2yhUPhSdJM4ZskFVkBm5x",
+                    ProjectName= "7051278188794834"
+                };
+
+                var identityProvider = new OpenStackIdentityProvider(identityEndpoint, identity);
+                // Verify that we can connect and our credentials are correct
+                identityProvider.Authenticate();
+
+                var storageAccount = new CloudFilesProvider(identity,identityProvider);
+
+            }
+        }
+
 
         private static void CopyToAzure()
         {
