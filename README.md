@@ -48,3 +48,5 @@ https://azure.microsoft.com/en-us/documentation/articles/storage-dotnet-how-to-u
 
 ** Explorer to deal with snapshot downloads and management.
 http://www.red-gate.com/products/azure-development/azure-explorer/
+
+.
